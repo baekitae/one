@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 # 페이지 기본 설정
 st.set_page_config(
@@ -8,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 커스텀 CSS 적용 (버튼 크기 키우기 및 디자인 개선)
+# 커스텀 CSS 적용
 st.markdown("""
     <style>
     .stButton>button {
@@ -31,7 +32,6 @@ st.markdown("""
         background-color: #4338CA;
         color: white;
     }
-    /* 특정 버튼(예: 정답 확인, 다음 문제)의 색상 변경을 위한 꼼수 (필요시 사용) */
     div[data-testid="stHorizontalBlock"] button {
         background-color: #EEF2FF;
     }
@@ -66,15 +66,13 @@ st.markdown("""
 
 # 세션 상태 초기화
 if 'current_view' not in st.session_state:
-    st.session_state.current_view = 'home'
+    st.session_state.current_view = 'home' # home, concept, activity, quiz, result
 if 'score' not in st.session_state:
     st.session_state.score = 0
 if 'question_index' not in st.session_state:
     st.session_state.question_index = 0
 if 'feedback' not in st.session_state:
     st.session_state.feedback = None
-if 'quiz_completed' not in st.session_state:
-    st.session_state.quiz_completed = False
 
 # 퀴즈 데이터
 questions = [
@@ -114,11 +112,10 @@ def reset_quiz():
     st.session_state.score = 0
     st.session_state.question_index = 0
     st.session_state.feedback = None
-    st.session_state.quiz_completed = False
     st.session_state.current_view = 'home'
 
 def check_answer(selected_option):
-    if st.session_state.feedback is None: # 중복 클릭 방지
+    if st.session_state.feedback is None: 
         correct_answer = questions[st.session_state.question_index]['answer']
         if selected_option == correct_answer:
             st.session_state.feedback = 'correct'
@@ -131,7 +128,6 @@ def next_question():
     if st.session_state.question_index < len(questions) - 1:
         st.session_state.question_index += 1
     else:
-        st.session_state.quiz_completed = True
         st.session_state.current_view = 'result'
 
 # === 헤더 영역 ===
@@ -175,7 +171,135 @@ elif st.session_state.current_view == 'concept':
     """, unsafe_allow_html=True)
     
     st.write("")
-    if st.button("도전! 문제 풀러 가기 ➡️"):
+    if st.button("직접 그려보며 확인하기 ➡️"):
+        go_to('activity')
+        st.rerun()
+
+# === 직접 체험하기(Activity) 화면 ===
+elif st.session_state.current_view == 'activity':
+    st.markdown("<p class='big-font'>내가 직접 원의 중심과 반지름 찾기!</p>", unsafe_allow_html=True)
+    
+    # HTML5 Canvas와 JavaScript를 이용한 인터랙티브 그리기 영역
+    html_code = """
+    <div style="text-align: center; font-family: 'Malgun Gothic', sans-serif; background-color: #F8FAFC; padding: 20px; border-radius: 15px;">
+        <h3 id="instruction" style="color:#1E293B;">미션 1: 원의 가장 한가운데(중심)를 찾아 클릭(터치)하세요!</h3>
+        <canvas id="mathCanvas" width="400" height="400" style="border:4px dashed #94A3B8; border-radius: 50%; cursor: pointer; background-color: white; margin: 10px 0;"></canvas>
+        <div id="message" style="min-height: 60px; font-weight:bold; color: #4F46E5; font-size: 20px; margin-top: 10px;"></div>
+        <button onclick="resetCanvas()" style="margin-top:10px; padding: 10px 25px; font-size: 18px; font-weight:bold; background-color:#F1F5F9; border:2px solid #CBD5E1; border-radius:10px; cursor: pointer; color:#475569;">다시 지우고 처음부터 하기</button>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('mathCanvas');
+        const ctx = canvas.getContext('2d');
+        const instruction = document.getElementById('instruction');
+        const message = document.getElementById('message');
+
+        const centerX = 200;
+        const centerY = 200;
+        const radius = 180;
+
+        let isCenterFound = false;
+        let drawnRadii = [];
+
+        function drawBase() {
+            ctx.clearRect(0, 0, 400, 400);
+            
+            // 기본 원 그리기
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#3730A3';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // 중심이 찾아졌다면 빨간 점 그리기
+            if (isCenterFound) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = '#EF4444';
+                ctx.fill();
+            }
+
+            // 그려진 반지름들 표시하기
+            drawnRadii.forEach((pt, index) => {
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(pt.x, pt.y);
+                ctx.strokeStyle = '#10B981';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 6, 0, 2*Math.PI);
+                ctx.fillStyle = '#10B981';
+                ctx.fill();
+            });
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            // 크롬북 터치 및 마우스 스케일 보정
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            if (!isCenterFound) {
+                const dist = Math.sqrt((x - centerX)**2 + (y - centerY)**2);
+                if (dist < 30) {
+                    isCenterFound = true;
+                    instruction.innerHTML = "미션 2: 원의 테두리(둘레)를 클릭해서 선을 그어보세요!";
+                    message.innerHTML = "정확해요! 빨간색 점이 바로 <b>'원의 중심'</b>입니다.";
+                    drawBase();
+                } else {
+                    message.innerHTML = "<span style='color:#EF4444;'>조금 더 정중앙을 클릭해 보세요!</span>";
+                }
+            } else {
+                const dist = Math.sqrt((x - centerX)**2 + (y - centerY)**2);
+                if (Math.abs(dist - radius) < 40) {
+                    const angle = Math.atan2(y - centerY, x - centerX);
+                    const edgeX = centerX + radius * Math.cos(angle);
+                    const edgeY = centerY + radius * Math.sin(angle);
+                    drawnRadii.push({x: edgeX, y: edgeY});
+                    
+                    if (drawnRadii.length === 1) {
+                        message.innerHTML = "이 초록색 선이 <b>'반지름'</b>입니다!<br>테두리를 여러 번 눌러 반지름을 더 그려보세요.";
+                        instruction.innerHTML = "미션 3: 한 원에서 반지름의 길이는 모두 같을까요?";
+                    } else {
+                        message.innerHTML = `반지름을 ${drawnRadii.length}개 그렸습니다.<br><b>직접 보니 어때요? 한 원에서 반지름의 길이는 모두 같아요!</b>`;
+                    }
+                    drawBase();
+                } else {
+                    message.innerHTML = "<span style='color:#EF4444;'>원의 테두리(파란색 선) 위를 정확히 클릭해 보세요!</span>";
+                }
+            }
+        });
+
+        // 모바일 및 크롬북 터치 이벤트 지원
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        function resetCanvas() {
+            isCenterFound = false;
+            drawnRadii = [];
+            instruction.innerHTML = "미션 1: 원의 가장 한가운데(중심)를 찾아 클릭(터치)하세요!";
+            message.innerHTML = "";
+            drawBase();
+        }
+
+        drawBase();
+    </script>
+    """
+    components.html(html_code, height=600)
+    
+    st.write("")
+    if st.button("원리도 깨달았으니 퀴즈 풀러 가기 ➡️"):
         go_to('quiz')
         st.rerun()
 
@@ -188,7 +312,6 @@ elif st.session_state.current_view == 'quiz':
     
     st.markdown(f"<div style='background-color:white; padding:20px; border-radius:15px; border:2px solid #E0E7FF; margin-bottom:30px;'><h3 style='color:#1F2937; text-align:center;'>Q{st.session_state.question_index + 1}. {current_q['question']}</h3></div>", unsafe_allow_html=True)
     
-    # 선택지 버튼
     cols = st.columns(3)
     for i, option in enumerate(current_q['options']):
         with cols[i]:
@@ -196,7 +319,6 @@ elif st.session_state.current_view == 'quiz':
                 check_answer(option)
                 st.rerun()
                 
-    # 피드백 영역
     if st.session_state.feedback:
         st.write("")
         if st.session_state.feedback == 'correct':
@@ -207,7 +329,6 @@ elif st.session_state.current_view == 'quiz':
         st.write("")
         btn_text = "다음 문제 ➡️" if st.session_state.question_index < len(questions) - 1 else "결과 보기 🏆"
         
-        # 가운데 정렬을 위한 꼼수
         _, col_btn, _ = st.columns([1, 2, 1])
         with col_btn:
             if st.button(btn_text, key="next_btn"):
@@ -226,7 +347,7 @@ elif st.session_state.current_view == 'result':
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<p style='text-align:center; font-size:20px; color:#4B5563; margin-bottom:30px;'>컴퍼스로 원을 아주 잘 그릴 수 있겠어요!</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:20px; color:#4B5563; margin-bottom:30px;'>이제 컴퍼스로 원을 아주 잘 그릴 수 있겠어요!</p>", unsafe_allow_html=True)
     
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
