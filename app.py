@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 커스텀 CSS 적용 (UI 개선)
+# 커스텀 CSS 적용 (UI 및 버튼 간격 완벽 개선)
 st.markdown("""
     <style>
     /* 전체 여백 조정 */
@@ -19,7 +19,7 @@ st.markdown("""
         max-width: 800px;
     }
     
-    /* 헤더 스타일 개선 */
+    /* 헤더 스타일 */
     .main-header {
         background: linear-gradient(135deg, #4F46E5, #6366F1);
         padding: 20px;
@@ -32,13 +32,13 @@ st.markdown("""
         text-align: center;
         margin: 0;
         font-size: 28px !important;
-        word-break: keep-all; /* 단어 단위로 줄바꿈 방지 */
+        word-break: keep-all;
     }
 
-    /* 공통 버튼 스타일 */
+    /* 공통 버튼 스타일 (가운데 정렬 및 크기 최적화) */
     .stButton>button {
-        width: 100%;
-        min-height: 80px; /* 높이를 늘려서 여유있게 */
+        width: 100% !important;
+        min-height: 100px;
         font-size: 22px !important;
         font-weight: bold;
         border-radius: 15px;
@@ -46,17 +46,26 @@ st.markdown("""
         background-color: white;
         color: #4F46E5;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        padding: 10px 20px;
-        word-break: keep-all; /* 글씨 잘림 방지 */
-        white-space: normal; /* 여러 줄 허용 */
-        line-height: 1.3;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+        word-break: keep-all;
+        padding: 10px;
+    }
+    .stButton>button p {
+        margin: 0 !important;
+        text-align: center !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     .stButton>button:hover {
         background-color: #4F46E5;
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     }
     .stButton>button:active {
         transform: translateY(0);
@@ -87,11 +96,6 @@ st.markdown("""
         border-left: 6px solid #4F46E5;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-    
-    /* 컬럼 간격 조정 */
-    [data-testid="column"] {
-        padding: 0 10px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -118,14 +122,14 @@ questions = [
         "answer": "반지름"
     },
     {
-        "question": "반지름이 4cm인 원이 있습니다. 이 원의 지름은 몇 cm일까요?",
-        "options": ["4cm", "8cm", "12cm"],
-        "answer": "8cm"
+        "question": "반지름이 5cm인 원이 있습니다. 이 원의 지름은 몇 cm일까요?",
+        "options": ["5cm", "10cm", "15cm"],
+        "answer": "10cm"
     },
     {
-        "question": "지름이 10cm인 원의 반지름은 몇 cm일까요?",
-        "options": ["5cm", "10cm", "20cm"],
-        "answer": "5cm"
+        "question": "지름이 14cm인 원의 반지름은 몇 cm일까요?",
+        "options": ["7cm", "14cm", "28cm"],
+        "answer": "7cm"
     },
     {
         "question": "한 원 안에서 그려진 여러 반지름의 길이는 어떨까요?",
@@ -171,11 +175,11 @@ if st.session_state.current_view == 'home':
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📖\n개념 먼저 배우기"):
+        if st.button("📖 개념 먼저 배우기", use_container_width=True):
             go_to('concept')
             st.rerun()
     with col2:
-        if st.button("✏️\n바로 퀴즈 풀기"):
+        if st.button("✏️ 바로 퀴즈 풀기", use_container_width=True):
             go_to('quiz')
             st.rerun()
 
@@ -201,7 +205,7 @@ elif st.session_state.current_view == 'concept':
     st.write("")
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
-        if st.button("직접 그려보며 확인하기 ➡️"):
+        if st.button("직접 그려보며 확인하기 ➡️", use_container_width=True):
             go_to('activity')
             st.rerun()
 
@@ -209,7 +213,7 @@ elif st.session_state.current_view == 'concept':
 elif st.session_state.current_view == 'activity':
     st.markdown("<p class='big-font'>내가 직접 그리는 반지름!</p>", unsafe_allow_html=True)
     
-    # 길이가 표시되고 색상이 랜덤하게 변하는 캔버스 코드
+    # 단위가 'cm'로 고정되어 표시되는 캔버스 코드
     html_code = """
     <div style="text-align: center; font-family: 'Malgun Gothic', sans-serif; background-color: #F8FAFC; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <h3 id="instruction" style="color:#1E293B; word-break: keep-all;">미션 1: 원의 가장 한가운데(중심)를 찾아 클릭하세요!</h3>
@@ -231,7 +235,6 @@ elif st.session_state.current_view == 'activity':
         let isCenterFound = false;
         let drawnRadii = [];
 
-        // 랜덤 색상 생성 함수 (너무 밝지 않은 색상으로)
         function getRandomColor() {
             const hue = Math.floor(Math.random() * 360);
             return `hsl(${hue}, 70%, 45%)`;
@@ -240,16 +243,13 @@ elif st.session_state.current_view == 'activity':
         function drawBase() {
             ctx.clearRect(0, 0, 400, 400);
             
-            // 기본 원 그리기
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.strokeStyle = '#3730A3';
             ctx.lineWidth = 4;
             ctx.stroke();
 
-            // 그려진 반지름들 표시하기
             drawnRadii.forEach((pt) => {
-                // 선 그리기
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.lineTo(pt.x, pt.y);
@@ -257,40 +257,34 @@ elif st.session_state.current_view == 'activity':
                 ctx.lineWidth = 4;
                 ctx.stroke();
 
-                // 테두리 점 그리기
                 ctx.beginPath();
                 ctx.arc(pt.x, pt.y, 6, 0, 2*Math.PI);
                 ctx.fillStyle = pt.color;
                 ctx.fill();
                 
-                // 길이 텍스트 표시 (선 중앙에)
                 const textX = centerX + (pt.x - centerX) / 2;
                 const textY = centerY + (pt.y - centerY) / 2;
                 
-                ctx.save(); // 현재 상태 저장
+                ctx.save();
                 ctx.translate(textX, textY);
-                // 텍스트가 선과 같은 각도가 되도록 회전 (선택 사항)
-                // ctx.rotate(Math.atan2(pt.y - centerY, pt.x - centerX));
                 
                 ctx.fillStyle = 'white';
-                ctx.font = '16px "Malgun Gothic"';
+                ctx.font = '18px "Malgun Gothic"';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 
-                // 텍스트 배경 그리기
-                const text = `${Math.round(pt.length)}px`;
+                // 단위를 cm로 고정 (초등학생 눈높이에 맞춘 5cm)
+                const text = `5cm`;
                 const textWidth = ctx.measureText(text).width;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.fillRect(-textWidth/2 - 4, -10, textWidth + 8, 20);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(-textWidth/2 - 4, -12, textWidth + 8, 24);
                 
-                // 텍스트 그리기
                 ctx.fillStyle = '#1F2937';
                 ctx.fillText(text, 0, 0);
                 
-                ctx.restore(); // 이전 상태 복원
+                ctx.restore();
             });
 
-            // 중심점은 항상 맨 위에 오도록 나중에 그림
             if (isCenterFound) {
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
@@ -322,20 +316,18 @@ elif st.session_state.current_view == 'activity':
                     const angle = Math.atan2(y - centerY, x - centerX);
                     const edgeX = centerX + radius * Math.cos(angle);
                     const edgeY = centerY + radius * Math.sin(angle);
-                    const length = Math.sqrt((edgeX - centerX)**2 + (edgeY - centerY)**2);
                     
                     drawnRadii.push({
                         x: edgeX, 
                         y: edgeY, 
-                        color: getRandomColor(),
-                        length: length
+                        color: getRandomColor()
                     });
                     
                     if (drawnRadii.length === 1) {
-                        message.innerHTML = `길이가 <b>${Math.round(length)}px</b>인 선이 생겼어요!<br>테두리를 여러 번 눌러 반지름을 더 그려보세요.`;
+                        message.innerHTML = `길이가 <b>5cm</b>인 선이 생겼어요!<br>테두리를 여러 번 눌러 반지름을 더 그려보세요.`;
                         instruction.innerHTML = "미션 3: 한 원에서 반지름의 길이는 모두 같을까요?";
                     } else {
-                        message.innerHTML = `반지름을 ${drawnRadii.length}개 그렸습니다. 길이가 모두 <b>${Math.round(length)}px</b>이네요!<br><b>한 원에서 반지름의 길이는 모두 같아요!</b>`;
+                        message.innerHTML = `반지름을 ${drawnRadii.length}개 그렸습니다. 길이가 모두 <b>5cm</b>이네요!<br><b>한 원에서 반지름의 길이는 모두 같아요!</b>`;
                     }
                     drawBase();
                 } else {
@@ -349,7 +341,7 @@ elif st.session_state.current_view == 'activity':
         });
 
         canvas.addEventListener('touchstart', function(e) {
-            e.preventDefault(); // 화면 스크롤 방지
+            e.preventDefault();
             handleInteract(e.touches[0].clientX, e.touches[0].clientY);
         }, {passive: false});
 
@@ -369,7 +361,7 @@ elif st.session_state.current_view == 'activity':
     st.write("")
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
-        if st.button("원리를 깨달았으니 퀴즈 풀기 ➡️"):
+        if st.button("원리를 깨달았으니 퀴즈 풀기 ➡️", use_container_width=True):
             go_to('quiz')
             st.rerun()
 
@@ -386,14 +378,13 @@ elif st.session_state.current_view == 'quiz':
     </div>
     """, unsafe_allow_html=True)
     
-    # 퀴즈 선택지 버튼 (상하 여백 및 폰트 크기 개선)
-    st.write('<div class="quiz-buttons">', unsafe_allow_html=True)
+    # 퀴즈 선택지 버튼 (비율을 동일하게 맞춘 columns 배치)
+    cols = st.columns(len(current_q['options']))
     for i, option in enumerate(current_q['options']):
-        # 버튼을 가로로 꽉 차게 배치하거나 모바일에서도 잘 보이도록 세로로 배치
-        if st.button(option, key=f"opt_{st.session_state.question_index}_{i}", disabled=st.session_state.feedback is not None):
-            check_answer(option)
-            st.rerun()
-    st.write('</div>', unsafe_allow_html=True)
+        with cols[i]:
+            if st.button(option, key=f"opt_{st.session_state.question_index}_{i}", use_container_width=True, disabled=st.session_state.feedback is not None):
+                check_answer(option)
+                st.rerun()
             
     if st.session_state.feedback:
         st.write("")
@@ -407,7 +398,7 @@ elif st.session_state.current_view == 'quiz':
         
         _, col_btn, _ = st.columns([1, 2, 1])
         with col_btn:
-            if st.button(btn_text, key="next_btn"):
+            if st.button(btn_text, key="next_btn", use_container_width=True):
                 next_question()
                 st.rerun()
 
@@ -427,6 +418,6 @@ elif st.session_state.current_view == 'result':
     
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
-        if st.button("🔄 처음부터 다시하기"):
+        if st.button("🔄 처음부터 다시하기", use_container_width=True):
             reset_quiz()
             st.rerun()
